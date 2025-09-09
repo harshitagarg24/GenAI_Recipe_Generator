@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🥗 Recipe Generator (Basic ML Project)
 
 This is a simple **Recipe Generator** built with **Streamlit** and **Scikit-learn (TF-IDF + Cosine Similarity)**.
@@ -34,3 +35,6 @@ recipe_generator_basic/
 ```
 
 Enjoy generating recipes! 🍴
+=======
+# GenAI_Recipe_Generator
+>>>>>>> d62bddf9dc2e90559c42fdc0757b54c41e641994
