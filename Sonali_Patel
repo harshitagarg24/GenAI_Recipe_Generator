@@ -1,0 +1,355 @@
+# import streamlit as st
+# import pandas as pd
+# from sklearn.feature_extraction.text import TfidfVectorizer
+# from sklearn.metrics.pairwise import cosine_similarity
+
+# # ---------- Unique Recipes Dataset ----------
+# recipes_per_cuisine = 50
+
+# # Unique image URLs for demo (placeholder images)
+# chinese_images = [f"https://www.themealdb.com/images/media/meals/1548772327.jpg" for _ in range(recipes_per_cuisine)]
+# north_images = [f"https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg" for _ in range(recipes_per_cuisine)]
+# south_images = [f"https://www.themealdb.com/images/media/meals/1bsv1q1560459826.jpg" for _ in range(recipes_per_cuisine)]
+
+# # Function to generate unique recipes
+# def generate_unique_recipes(cuisine_name, recipe_prefix, base_ingredients_list, base_instructions_list, image_list):
+#     recipes = []
+#     ingredients = []
+#     instructions = []
+#     images = []
+#     for i in range(recipes_per_cuisine):
+#         recipes.append(f"{recipe_prefix} {i+1}")
+#         ingredients.append(base_ingredients_list[i % len(base_ingredients_list)] + f", extra ingredient {i+1}")
+#         instructions.append(base_instructions_list[i % len(base_instructions_list)] + f" Add extra ingredient {i+1} while cooking.")
+#         images.append(image_list[i % len(image_list)])
+#     return {
+#         "cuisine": [cuisine_name]*recipes_per_cuisine,
+#         "recipe": recipes,
+#         "ingredients": ingredients,
+#         "instructions": instructions,
+#         "image": images
+#     }
+
+# # ---------- Recipe Base Lists ----------
+# chinese_ingredients_base = [
+#     "rice, vegetables, soy sauce",
+#     "noodles, chicken, garlic",
+#     "tofu, broccoli, ginger",
+#     "prawn, bell pepper, chili sauce",
+#     "spring rolls, cabbage, carrot"
+# ]
+# chinese_instructions_base = [
+#     "Stir fry vegetables with rice and soy sauce",
+#     "Cook chicken with noodles and garlic sauce",
+#     "Sauté tofu and broccoli with ginger",
+#     "Cook prawns with bell peppers and chili sauce",
+#     "Prepare spring rolls with cabbage and carrot"
+# ]
+
+# north_ingredients_base = [
+#     "paneer, butter, tomato, cream, garam masala",
+#     "chickpeas, onion, tomato, ginger, garlic",
+#     "potato, cauliflower, turmeric, cumin",
+#     "kidney beans, onion, tomato, garam masala",
+#     "spinach, paneer, garlic, cream",
+#     "peas, paneer, tomato, spices"
+# ]
+# north_instructions_base = [
+#     "Cook paneer in butter with tomato and cream, add garam masala",
+#     "Boil chickpeas and cook with onion-tomato masala",
+#     "Sauté potato and cauliflower with turmeric and cumin",
+#     "Cook kidney beans in spicy onion-tomato gravy",
+#     "Prepare spinach puree and add paneer cubes",
+#     "Cook peas and paneer in tomato-spice gravy"
+# ]
+
+# south_ingredients_base = [
+#     "rice, coconut, curry leaves, mustard seeds",
+#     "idli batter, fermented rice, urad dal",
+#     "dosa batter, rice, urad dal, fenugreek seeds",
+#     "sambar dal, tamarind, vegetables, spices",
+#     "upma rava, onion, green chili, ginger"
+# ]
+# south_instructions_base = [
+#     "Cook rice with coconut and curry leaves",
+#     "Steam idlis from fermented rice and urad dal batter",
+#     "Prepare dosa from rice and urad dal batter",
+#     "Cook sambar with dal, tamarind, vegetables, and spices",
+#     "Prepare upma by roasting rava with onion and chili"
+# ]
+
+# # ---------- Generate Datasets ----------
+# chinese_data = generate_unique_recipes("Chinese", "Chinese Recipe", chinese_ingredients_base, chinese_instructions_base, chinese_images)
+# north_data = generate_unique_recipes("North Indian", "North Indian Recipe", north_ingredients_base, north_instructions_base, north_images)
+# south_data = generate_unique_recipes("South Indian", "South Indian Recipe", south_ingredients_base, south_instructions_base, south_images)
+
+# # Combine all cuisines
+# data = {
+#     "cuisine": chinese_data["cuisine"] + north_data["cuisine"] + south_data["cuisine"],
+#     "recipe": chinese_data["recipe"] + north_data["recipe"] + south_data["recipe"],
+#     "ingredients": chinese_data["ingredients"] + north_data["ingredients"] + south_data["ingredients"],
+#     "instructions": chinese_data["instructions"] + north_data["instructions"] + south_data["instructions"],
+#     "image": chinese_data["image"] + north_data["image"] + south_data["image"]
+# }
+
+# df = pd.DataFrame(data)
+
+# # ---------- TF-IDF Model ----------
+# vectorizer = TfidfVectorizer()
+# vectorizer.fit(df['ingredients'])
+
+# # ---------- Streamlit Layout ----------
+# st.set_page_config(page_title="Smart Recipe Generator", layout="wide")
+# st.markdown("<h1 style='text-align:center;color:#6a0dad;'>🍽 Smart Recipe Generator</h1>", unsafe_allow_html=True)
+# st.markdown("<p style='text-align:center;color:#555;'>Enter ingredients you have or select a cuisine!</p>", unsafe_allow_html=True)
+# st.write("---")
+
+# # Cuisine selection
+# cuisine_choice = st.selectbox("Select Cuisine (optional):", ["All"] + list(df['cuisine'].unique()))
+
+# # Filter by cuisine if selected
+# if cuisine_choice != "All":
+#     filtered_df = df[df['cuisine'] == cuisine_choice].reset_index(drop=True)
+# else:
+#     filtered_df = df.copy().reset_index(drop=True)
+
+# # User input for ingredients
+# user_input = st.text_input("Enter ingredients you have (comma separated):")
+
+# # ---------- Recommendation Logic ----------
+# if user_input:
+#     user_vec = vectorizer.transform([user_input])
+#     tfidf_filtered = vectorizer.transform(filtered_df['ingredients'])
+#     similarity = cosine_similarity(user_vec, tfidf_filtered).flatten()
+#     filtered_df['similarity'] = similarity
+#     results = filtered_df.sort_values(by='similarity', ascending=False).head(10).reset_index(drop=True)
+    
+#     st.subheader("Top Recipe Suggestions Based on Your Ingredients:")
+    
+#     for idx in range(len(results)):
+#         row = results.iloc[idx]
+#         with st.expander(f"{row['recipe']} ({row['cuisine']})"):
+#             col1, col2 = st.columns([1,2])
+#             with col1:
+#                 st.image(row['image'], use_column_width=True)
+#             with col2:
+#                 st.markdown(f"Ingredients: {row['ingredients']}")
+#                 st.markdown(f"Instructions: {row['instructions']}")
+# else:
+#     st.subheader("Recipe List:")
+#     for idx in range(len(filtered_df)):
+#         row = filtered_df.iloc[idx]
+#         with st.expander(f"{row['recipe']} ({row['cuisine']})"):
+#             col1, col2 = st.columns([1,2])
+#             with col1:
+#                 st.image(row['image'], use_column_width=True)
+#             with col2:
+#                 st.markdown(f"Ingredients: {row['ingredients']}")
+#                 st.markdown(f"Instructions: {row['instructions']}") 
+import streamlit as st
+import pandas as pd
+import random
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# ---------- Unique Recipes Dataset ----------
+recipes_per_cuisine = 50
+
+# ---------- Placeholder Images (unique rotation) ----------
+chinese_images_list = [
+    "https://www.themealdb.com/images/media/meals/1548772327.jpg",
+    "https://www.themealdb.com/images/media/meals/1529444113.jpg",
+    "https://www.themealdb.com/images/media/meals/1529444830.jpg",
+    "https://www.themealdb.com/images/media/meals/1529446352.jpg",
+    "https://www.themealdb.com/images/media/meals/1529446932.jpg"
+]
+
+north_images_list = [
+    "https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg",
+    "https://www.themealdb.com/images/media/meals/uttuxy1511382180.jpg",
+    "https://www.themealdb.com/images/media/meals/qptpvt1487339892.jpg",
+    "https://www.themealdb.com/images/media/meals/uwvxpv1511557015.jpg",
+    "https://www.themealdb.com/images/media/meals/wtsvxx1511296896.jpg"
+]
+
+south_images_list = [
+    "https://www.themealdb.com/images/media/meals/1bsv1q1560459826.jpg",
+    "https://www.themealdb.com/images/media/meals/xxpqsy1511452222.jpg",
+    "https://www.themealdb.com/images/media/meals/4pqimk1683207418.jpg",
+    "https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg",
+    "https://www.themealdb.com/images/media/meals/vrspxv1511722107.jpg"
+]
+
+# Cycle images so each recipe gets a different one
+chinese_images = [chinese_images_list[i % len(chinese_images_list)] for i in range(recipes_per_cuisine)]
+north_images = [north_images_list[i % len(north_images_list)] for i in range(recipes_per_cuisine)]
+south_images = [south_images_list[i % len(south_images_list)] for i in range(recipes_per_cuisine)]
+
+# ---------- Ingredient-Based Image Mapping ----------
+ingredient_images = {
+    "rice": "https://www.themealdb.com/images/media/meals/1548772327.jpg",
+    "paneer": "https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg",
+    "tofu": "https://www.themealdb.com/images/media/meals/1bsv1q1560459826.jpg",
+    "chickpeas": "https://www.themealdb.com/images/media/meals/tvtxpq1511464705.jpg",
+    "noodles": "https://www.themealdb.com/images/media/meals/tsqqsw1511795853.jpg",
+    "dosa": "https://www.themealdb.com/images/media/meals/4pqimk1683207418.jpg",
+    "idli": "https://www.themealdb.com/images/media/meals/xxpqsy1511452222.jpg",
+    "sambar": "https://www.themealdb.com/images/media/meals/x0lk931587671540.jpg"
+}
+
+def get_dynamic_image(user_input):
+    for ing in user_input.lower().split(","):
+        ing = ing.strip()
+        if ing in ingredient_images:
+            return ingredient_images[ing]
+    return "https://via.placeholder.com/300"
+
+# ---------- Recipe Generator ----------
+def generate_unique_recipes(cuisine_name, recipe_prefix, base_ingredients_list, base_instructions_list, image_list):
+    recipes = []
+    ingredients = []
+    instructions = []
+    images = []
+    for i in range(recipes_per_cuisine):
+        recipes.append(f"{recipe_prefix} {i+1}")
+        ingredients.append(base_ingredients_list[i % len(base_ingredients_list)] + f", extra ingredient {i+1}")
+        instructions.append(base_instructions_list[i % len(base_instructions_list)] + f" Add extra ingredient {i+1} while cooking.")
+        images.append(image_list[i % len(image_list)])
+    return {
+        "cuisine": [cuisine_name]*recipes_per_cuisine,
+        "recipe": recipes,
+        "ingredients": ingredients,
+        "instructions": instructions,
+        "image": images
+    }
+
+# ---------- Recipe Base Lists ----------
+chinese_ingredients_base = [
+    "rice, vegetables, soy sauce",
+    "noodles, chicken, garlic",
+    "tofu, broccoli, ginger",
+    "prawn, bell pepper, chili sauce",
+    "spring rolls, cabbage, carrot"
+]
+chinese_instructions_base = [
+    "Stir fry vegetables with rice and soy sauce",
+    "Cook chicken with noodles and garlic sauce",
+    "Sauté tofu and broccoli with ginger",
+    "Cook prawns with bell peppers and chili sauce",
+    "Prepare spring rolls with cabbage and carrot"
+]
+
+north_ingredients_base = [
+    "paneer, butter, tomato, cream, garam masala",
+    "chickpeas, onion, tomato, ginger, garlic",
+    "potato, cauliflower, turmeric, cumin",
+    "kidney beans, onion, tomato, garam masala",
+    "spinach, paneer, garlic, cream",
+    "peas, paneer, tomato, spices"
+]
+north_instructions_base = [
+    "Cook paneer in butter with tomato and cream, add garam masala",
+    "Boil chickpeas and cook with onion-tomato masala",
+    "Sauté potato and cauliflower with turmeric and cumin",
+    "Cook kidney beans in spicy onion-tomato gravy",
+    "Prepare spinach puree and add paneer cubes",
+    "Cook peas and paneer in tomato-spice gravy"
+]
+
+south_ingredients_base = [
+    "rice, coconut, curry leaves, mustard seeds",
+    "idli batter, fermented rice, urad dal",
+    "dosa batter, rice, urad dal, fenugreek seeds",
+    "sambar dal, tamarind, vegetables, spices",
+    "upma rava, onion, green chili, ginger"
+]
+south_instructions_base = [
+    "Cook rice with coconut and curry leaves",
+    "Steam idlis from fermented rice and urad dal batter",
+    "Prepare dosa from rice and urad dal batter",
+    "Cook sambar with dal, tamarind, vegetables, and spices",
+    "Prepare upma by roasting rava with onion and chili"
+]
+
+# ---------- Generate Datasets ----------
+chinese_data = generate_unique_recipes("Chinese", "Chinese Recipe", chinese_ingredients_base, chinese_instructions_base, chinese_images)
+north_data = generate_unique_recipes("North Indian", "North Indian Recipe", north_ingredients_base, north_instructions_base, north_images)
+south_data = generate_unique_recipes("South Indian", "South Indian Recipe", south_ingredients_base, south_instructions_base, south_images)
+
+data = {
+    "cuisine": chinese_data["cuisine"] + north_data["cuisine"] + south_data["cuisine"],
+    "recipe": chinese_data["recipe"] + north_data["recipe"] + south_data["recipe"],
+    "ingredients": chinese_data["ingredients"] + north_data["ingredients"] + south_data["ingredients"],
+    "instructions": chinese_data["instructions"] + north_data["instructions"] + south_data["instructions"],
+    "image": chinese_data["image"] + north_data["image"] + south_data["image"]
+}
+
+df = pd.DataFrame(data)
+
+# Add difficulty and rating
+df['difficulty'] = [random.choice(['Easy', 'Medium', 'Hard']) for _ in range(len(df))]
+df['rating'] = [round(random.uniform(3.0, 5.0), 1) for _ in range(len(df))]
+
+# ---------- TF-IDF Model ----------
+vectorizer = TfidfVectorizer()
+vectorizer.fit(df['ingredients'])
+
+# ---------- Streamlit Layout ----------
+st.set_page_config(page_title="Smart Recipe Generator", layout="wide")
+st.markdown("<h1 style='text-align:center;color:#6a0dad;'>🍽 Smart Recipe Generator</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center;color:#555;'>Enter ingredients you have or select a cuisine!</p>", unsafe_allow_html=True)
+st.write("---")
+
+# Initialize favorites
+if 'favorites' not in st.session_state:
+    st.session_state.favorites = []
+
+# Cuisine selection
+cuisine_choice = st.selectbox("Select Cuisine (optional):", ["All"] + list(df['cuisine'].unique()))
+
+# Filter by cuisine
+if cuisine_choice != "All":
+    filtered_df = df[df['cuisine'] == cuisine_choice].reset_index(drop=True)
+else:
+    filtered_df = df.copy().reset_index(drop=True)
+
+# Search bar
+search_query = st.text_input("Search by recipe name (optional):")
+if search_query:
+    filtered_df = filtered_df[filtered_df['recipe'].str.contains(search_query, case=False)].reset_index(drop=True)
+
+# User input
+user_input = st.text_input("Enter ingredients you have (comma separated):")
+
+# ---------- Recommendation Logic ----------
+if user_input:
+    user_vec = vectorizer.transform([user_input])
+
+    if not filtered_df.empty:  # ✅ check if dataframe is not empty
+        tfidf_filtered = vectorizer.transform(filtered_df['ingredients'])
+        similarity = cosine_similarity(user_vec, tfidf_filtered).flatten()
+        filtered_df['similarity'] = similarity
+        results = filtered_df.sort_values(by='similarity', ascending=False).head(10).reset_index(drop=True)
+
+        if results.empty:
+            st.warning("⚠ No matching recipes found. Try different ingredients!")
+        else:
+            st.subheader("Top Recipe Suggestions Based on Your Ingredients:")
+
+            for idx in range(len(results)):
+                row = results.iloc[idx]
+                matched = [ing.strip() for ing in user_input.lower().split(",") if ing.strip() in row['ingredients'].lower()]
+                with st.expander(f"{row['recipe']} ({row['cuisine']})"):
+                    col1, col2 = st.columns([1,2])
+                    with col1:
+                        # Show recipe's own image
+                        st.image(row['image'], use_column_width=True)
+                    with col2:
+                        st.markdown(f"*Difficulty:* {row['difficulty']}") 
+                        st.markdown(f"⭐ *Rating:* {row['rating']} / 5.0")
+                        st.markdown(f"Ingredients: {row['ingredients']}")
+                        st.markdown(f"Instructions: {row['instructions']}")
+                        if matched:
+                            st.markdown(f"✅ Matched Ingredients: {', '.join(matched)}")
+    else:
+        st.warning("⚠ No recipes available for this cuisine/search. Try another filter!")
